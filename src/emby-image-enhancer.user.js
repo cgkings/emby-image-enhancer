@@ -1,35 +1,60 @@
 // ==UserScript==
 // @name         Emby 高清图片优化
 // @namespace    http://tampermonkey.net/
-// @version      1.0
-// @description  移除 Emby 图片 URL 中的尺寸限制参数
+// @version      1.1
+// @description  智能优化 Emby 图片显示质量，自动调整分辨率
 // @author       You
 // @match        *://*/emby/*
 // @match        *://*/web/*
 // @grant        none
 // @run-at       document-start
 // @license MIT
-
 // ==/UserScript==
 
 (function() {
     'use strict';
 
+    // 配置项
+    const CONFIG = {
+        // 封面图最大宽度（像素）
+        posterMaxWidth: 500,
+        // 背景图最大宽度（像素）
+        backdropMaxWidth: 1200,
+        // 默认最大宽度（像素）
+        defaultMaxWidth: 800
+    };
+
+    // 判断图片类型并返回对应的最大宽度
+    function getMaxWidthByUrl(url) {
+        if (url.includes('/Primary?')) {
+            return CONFIG.posterMaxWidth;
+        }
+        if (url.includes('/Backdrop?')) {
+            return CONFIG.backdropMaxWidth;
+        }
+        return CONFIG.defaultMaxWidth;
+    }
+
     // 处理图片 URL 的函数
     function processImageUrl(img) {
-        if (!img.src || (!img.src.includes('maxWidth') && !img.src.includes('maxHeight'))) {
+        if (!img.src || !img.src.includes('emby/Items')) {
             return;
         }
 
         try {
             const url = new URL(img.src);
-            url.searchParams.delete('maxWidth');
-            url.searchParams.delete('maxHeight');
-            const newSrc = url.toString();
+            const currentMaxWidth = url.searchParams.get('maxWidth');
+            const currentMaxHeight = url.searchParams.get('maxHeight');
             
-            if (img.src !== newSrc) {
-                console.log("更新图片:", newSrc);
-                img.src = newSrc;
+            // 如果当前限制小于配置的最大宽度，则更新
+            if (currentMaxWidth && parseInt(currentMaxWidth) < getMaxWidthByUrl(img.src)) {
+                url.searchParams.set('maxWidth', getMaxWidthByUrl(img.src).toString());
+                url.searchParams.delete('maxHeight');
+                
+                if (img.src !== url.toString()) {
+                    console.log("更新图片:", url.toString());
+                    img.src = url.toString();
+                }
             }
         } catch (error) {
             console.error("处理图片URL时出错:", error);

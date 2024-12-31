@@ -24,31 +24,110 @@ http://your-emby-server/emby/Items/123/Images/Primary?tag=xxx&quality=90
 2. 复制粘贴如下代码：
 ```
 (function() {
+    'use strict';
     console.log("Emby 高清图片优化脚本启动...");
-    // 监听 DOM 变化
-    const observer = new MutationObserver(() => {
-        document.querySelectorAll('img').forEach(img => {
-            if (img.src && (img.src.includes('maxWidth') || img.src.includes('maxHeight'))) {
-                try {
-                    // 创建一个 URL 对象
-                    let url = new URL(img.src);
-                    // 删除 maxWidth 和 maxHeight 参数
-                    url.searchParams.delete('maxWidth');
-                    url.searchParams.delete('maxHeight');
-                    // 生成新的 URL
-                    let newSrc = url.toString();
-                    if (img.src !== newSrc) {
-                        console.log("原始地址:", img.src, "更新地址:", newSrc);
-                        img.src = newSrc;
-                    }
-                } catch (error) {
-                    console.error("更新图片地址时发生错误:", error);
+
+    // 配置项
+    const CONFIG = {
+        // 封面图最大宽度（像素）
+        posterMaxWidth: 500,
+        // 背景图最大宽度（像素）
+        backdropMaxWidth: 1200,
+        // 默认最大宽度（像素）
+        defaultMaxWidth: 800
+    };
+
+    // 判断图片类型并返回对应的最大宽度
+    function getMaxWidthByUrl(url) {
+        if (url.includes('/Primary?')) {
+            return CONFIG.posterMaxWidth;
+        }
+        if (url.includes('/Backdrop?')) {
+            return CONFIG.backdropMaxWidth;
+        }
+        return CONFIG.defaultMaxWidth;
+    }
+
+    // 处理图片 URL 的函数
+    function processImageUrl(img) {
+        if (!img.src || !img.src.includes('emby/Items')) {
+            return;
+        }
+
+        try {
+            const url = new URL(img.src);
+            const currentMaxWidth = url.searchParams.get('maxWidth');
+            const currentMaxHeight = url.searchParams.get('maxHeight');
+            
+            // 如果当前限制小于配置的最大宽度，则更新
+            if (currentMaxWidth && parseInt(currentMaxWidth) < getMaxWidthByUrl(img.src)) {
+                url.searchParams.set('maxWidth', getMaxWidthByUrl(img.src).toString());
+                url.searchParams.delete('maxHeight');
+                
+                if (img.src !== url.toString()) {
+                    console.log("更新图片:", url.toString());
+                    img.src = url.toString();
                 }
+            }
+        } catch (error) {
+            console.error("处理图片URL时出错:", error);
+        }
+    }
+
+    // 处理所有图片
+    function processAllImages() {
+        document.querySelectorAll('img[src*="emby/Items"]').forEach(processImageUrl);
+    }
+
+    // 创建 MutationObserver
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            // 检查新添加的节点
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeName === 'IMG') {
+                    processImageUrl(node);
+                } else if (node.querySelectorAll) {
+                    node.querySelectorAll('img[src*="emby/Items"]').forEach(processImageUrl);
+                }
+            });
+
+            // 检查属性变化
+            if (mutation.type === 'attributes' && 
+                mutation.attributeName === 'src' && 
+                mutation.target.nodeName === 'IMG') {
+                processImageUrl(mutation.target);
             }
         });
     });
-    observer.observe(document.body, { childList: true, subtree: true });
-    console.log("Emby 高清图片优化脚本已加载完成！");
+
+    // 配置 MutationObserver
+    const observerConfig = {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['src']
+    };
+
+    // 适配客户端 API
+    function initializeScript() {
+        try {
+            processAllImages();
+            observer.observe(document.body, observerConfig);
+            console.log("Emby 高清图片优化脚本初始化完成");
+        } catch (error) {
+            console.error("脚本初始化失败:", error);
+        }
+    }
+
+    // 确保在 DOM 加载完成后运行
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeScript);
+    } else {
+        initializeScript();
+    }
+
+    // 监听页面加载完成事件，确保处理动态加载的内容
+    window.addEventListener('load', processAllImages);
 })();
 ```
 3. 启用，重载
