@@ -27,7 +27,7 @@ http://your-emby-server/emby/Items/123/Images/Primary?tag=xxx&quality=90
     'use strict';
     console.log("Emby 高清图片优化脚本启动...");
 
-    // 配置项
+    // 配置项，想显示原图可以设置为99999
     const CONFIG = {
         // 封面图最大宽度（像素）
         posterMaxWidth: 500,
