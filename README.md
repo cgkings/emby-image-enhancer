@@ -8,14 +8,50 @@
 http://your-emby-server/emby/Items/123/Images/Primary?maxHeight=375&maxWidth=250&tag=xxx&quality=90
 本脚本会自动移除这些限制参数，转换为：
 http://your-emby-server/emby/Items/123/Images/Primary?tag=xxx&quality=90
-## 使用方法
+## Emby 网页端 油猴脚本使用方法
 1. 安装 Tampermonkey 浏览器扩展
    - [Chrome 网上应用店](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
    - [Firefox 附加组件](https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/)
 
-2. 点击本页面的"安装此脚本"按钮
+2. 点击[本页面](https://greasyfork.org/zh-CN/scripts/522379-emby-高清图片优化)的"安装此脚本"按钮
 
 3. 打开 Emby 网页端，脚本会自动生效
+
+## Emby 客户端 Emby.CustomCssJS插件的js脚本
+1. 安装 Emby.CustomCssJS插件
+   `https://github.com/Shurelol/Emby.CustomCssJS`
+
+2. 复制粘贴如下代码：
+```
+(function() {
+    console.log("Emby 高清图片优化脚本启动...");
+    // 监听 DOM 变化
+    const observer = new MutationObserver(() => {
+        document.querySelectorAll('img').forEach(img => {
+            if (img.src && (img.src.includes('maxWidth') || img.src.includes('maxHeight'))) {
+                try {
+                    // 创建一个 URL 对象
+                    let url = new URL(img.src);
+                    // 删除 maxWidth 和 maxHeight 参数
+                    url.searchParams.delete('maxWidth');
+                    url.searchParams.delete('maxHeight');
+                    // 生成新的 URL
+                    let newSrc = url.toString();
+                    if (img.src !== newSrc) {
+                        console.log("原始地址:", img.src, "更新地址:", newSrc);
+                        img.src = newSrc;
+                    }
+                } catch (error) {
+                    console.error("更新图片地址时发生错误:", error);
+                }
+            }
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    console.log("Emby 高清图片优化脚本已加载完成！");
+})();
+```
+3. 启用，重载
 
 ## 兼容性
 - 适用于所有使用标准 Web 界面的 Emby 服务器
