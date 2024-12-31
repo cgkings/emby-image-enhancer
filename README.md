@@ -23,7 +23,7 @@ http://your-emby-server/emby/Items/123/Images/Primary?tag=xxx&quality=90
 
 2. 复制粘贴如下代码：emby-image-enhancer.CustomCssJS.js
 
-3. 启用，重载
+3. 强制启用，重载，已支持网页端，无需油猴脚本
 
 ## 兼容性
 - 适用于所有使用标准 Web 界面的 Emby 服务器
