@@ -21,7 +21,7 @@ http://your-emby-server/emby/Items/123/Images/Primary?tag=xxx&quality=90
 1. 安装 Emby.CustomCssJS插件
    `https://github.com/Shurelol/Emby.CustomCssJS`
 
-2. 复制粘贴如下代码：emby-image-enhancer.dll.js
+2. 复制粘贴如下代码：emby-image-enhancer.CustomCssJS.js
 
 3. 启用，重载
 
